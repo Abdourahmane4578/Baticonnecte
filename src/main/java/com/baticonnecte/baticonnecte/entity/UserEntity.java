@@ -36,6 +36,9 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private StatusEnum statut;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private ProfileEntity profile;
+
     @Enumerated(EnumType.STRING)
     private TypeUserEnum role;
 
