@@ -51,11 +51,12 @@ public class MetierService {
         return metierRepository.findById(id);
     }
 
-    public MetierEntity update(UUID id, String nom, String description){
+    public MetierEntity update(UUID id, String nom, String description, StatusMetierEnum statut){
         MetierEntity metier = metierRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Metier introuvable"));
 
         if (nom != null) metier.setNom(nom);
         if (description != null) metier.setDescription(description);
+        if (statut != null) metier.setStatut(statut);
 
         MetierEntity response = metierRepository.save(metier);
 

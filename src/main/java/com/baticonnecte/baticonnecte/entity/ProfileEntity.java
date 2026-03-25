@@ -1,6 +1,5 @@
 package com.baticonnecte.baticonnecte.entity;
 
-import com.baticonnecte.baticonnecte.enumeration.StatusMetierEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,20 +18,25 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "metiers")
-public class MetierEntity {
+@Table(name = "profiles")
+public class ProfileEntity {
 
     @Id
     @GeneratedValue
     @UuidGenerator
     private UUID id;
-    private String nom;
-    private String description;
-    @Enumerated(EnumType.STRING)
-    private StatusMetierEnum statut;
 
-    @OneToOne(mappedBy = "metier", cascade = CascadeType.ALL)
-    private ProfileEntity profile;
+    @JsonIgnore
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @JsonIgnore
+    @OneToOne
+    @JoinColumn(name = "metier_id")
+    private MetierEntity metier;
+
+    private String description;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
