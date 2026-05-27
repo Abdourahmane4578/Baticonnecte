@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: management-task-api
+    ports:
+      - "8090:8090"
+    environment:
+      SERVER_PORT: 8090

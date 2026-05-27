@@ -2,6 +2,8 @@ package com.baticonnecte.baticonnecte.entity;
 
 import com.baticonnecte.baticonnecte.enumeration.StatusEnum;
 import com.baticonnecte.baticonnecte.enumeration.TypeUserEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -31,6 +33,7 @@ public class UserEntity {
     private String adresse;
     private String ville;
     private String email;
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -41,6 +44,9 @@ public class UserEntity {
 
     @Enumerated(EnumType.STRING)
     private TypeUserEnum role;
+
+    @Column(nullable = true)
+    private String imageUrl;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

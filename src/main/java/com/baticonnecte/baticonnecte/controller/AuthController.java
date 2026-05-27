@@ -4,17 +4,23 @@ import com.baticonnecte.baticonnecte.Service.AuthService;
 import com.baticonnecte.baticonnecte.config.security.JwtService;
 import com.baticonnecte.baticonnecte.dto.LoginUserDto;
 import com.baticonnecte.baticonnecte.dto.RegisterUserDto;
+import com.baticonnecte.baticonnecte.dto.UserResponseDto;
 import com.baticonnecte.baticonnecte.entity.UserEntity;
+import com.baticonnecte.baticonnecte.repository.UserRepository;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -23,56 +29,96 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private final AuthService authService;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+        private final AuthService authService;
+        private final JwtService jwtService;
+        private final AuthenticationManager authenticationManager;
+        private final UserRepository userRepository;
 
-    public AuthController(AuthService authService, JwtService jwtService, AuthenticationManager authenticationManager){
-        this.authService = authService;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-    }
+        public AuthController(AuthService authService, JwtService jwtService,
+                        AuthenticationManager authenticationManager,
+                        UserRepository userRepository) {
+                this.authService = authService;
+                this.jwtService = jwtService;
+                this.authenticationManager = authenticationManager;
+                this.userRepository = userRepository;
+        }
 
-    @Operation(summary = "Créer un compte utilisateur")
-    @ApiResponse(responseCode = "201", description = "Retourne les informations de l'utilisateur créé")
-    @ApiResponse(responseCode = "400", description = "Champs obligatoires")
-    @ApiResponse(responseCode = "409", description = "Email existant !")
-    @PostMapping("/register")
-    public ResponseEntity<UserEntity> register(@Valid @RequestBody RegisterUserDto requestbody){
-        UserEntity userEntity = authService.register(requestbody.nomComplet(), requestbody.adresse(), requestbody.ville(), requestbody.email(), requestbody.password(), requestbody.role());
+        @Operation(summary = "Créer un compte utilisateur")
+        @ApiResponse(responseCode = "201", description = "Retourne les informations de l'utilisateur créé")
+        @ApiResponse(responseCode = "400", description = "Champs obligatoires")
+        @ApiResponse(responseCode = "409", description = "Email existant !")
+        @PostMapping("/register")
+        public ResponseEntity<UserEntity> register(@Valid @RequestBody RegisterUserDto requestbody) {
+                UserEntity userEntity = authService.register(requestbody.nomComplet(), requestbody.adresse(),
+                                requestbody.ville(), requestbody.email(), requestbody.password(), requestbody.role());
 
-        return ResponseEntity.status(201).body(userEntity);
-    }
+                return ResponseEntity.status(201).body(userEntity);
+        }
 
-    @Operation(summary = "Authentifier un utilisateur")
-    @ApiResponse(responseCode = "200", description = "Retourne les informations de l'utilisateur authentifié")
-    @ApiResponse(responseCode = "400", description = "Champs obligatoires")
-    @ApiResponse(responseCode = "401", description = "Utilisateur ou mot de passe incorrecte")
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginUserDto loginUserDto){
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                    loginUserDto.email(),
-                    loginUserDto.password()
-            )
-        );
+        @Operation(summary = "Authentifier un utilisateur")
+        @ApiResponse(responseCode = "200", description = "Retourne les informations de l'utilisateur authentifié")
+        @ApiResponse(responseCode = "400", description = "Champs obligatoires")
+        @ApiResponse(responseCode = "401", description = "Utilisateur ou mot de passe incorrecte")
+        @PostMapping("/login")
+        public ResponseEntity<?> login(@Valid @RequestBody LoginUserDto loginUserDto) {
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        var userEntity = authService.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé après authentification"));
+                Authentication authentication = authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(
+                                                loginUserDto.email(),
+                                                loginUserDto.password()));
 
-        String role = userDetails.getAuthorities().stream()
-                .findFirst()
-                .map(item -> item.getAuthority().replace("ROLE_", ""))
-                .orElse("USER");
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        String token = jwtService.generateToken(userDetails.getUsername(), role);
+                var userEntity = authService.findByEmail(userDetails.getUsername())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Utilisateur non trouvé après authentification"));
 
-        return ResponseEntity.ok(Map.of(
-                "token", token,
-                "id", userEntity.getId(),
-                "username", userEntity.getNomComplet(),
-                "email", userEntity.getEmail(),
-                "role", role));
-    }
+                String role = userDetails.getAuthorities() == null
+                                ? "USER"
+                                : userDetails.getAuthorities().stream()
+                                                .findFirst()
+                                                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                                                .orElse("USER");
+
+                String token = jwtService.generateToken(
+                                userEntity.getId(),
+                                userEntity.getNomComplet(),
+                                userDetails.getUsername(),
+                                role);
+
+                return ResponseEntity.ok(Map.of(
+                                "token", token,
+                                "id", userEntity.getId(),
+                                "username", userEntity.getNomComplet(),
+                                "email", userEntity.getEmail(),
+                                "role", role));
+        }
+
+        @Operation(summary = "Récupérer le profile utilisateur")
+        @ApiResponse(responseCode = "200", description = "Retourne les informations de l'utilisateur connecté")
+        @ApiResponse(responseCode = "401", description = "Authentification requise")
+        @GetMapping("/me")
+        public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new ResponseStatusException(HttpStatusCode.valueOf(403), "Authentification requise");
+                }
+
+                String email = authentication.getName();
+
+                UserEntity user = userRepository.findByEmail(email)
+                                .orElseThrow();
+
+                UserResponseDto dto = new UserResponseDto(
+                                user.getId(),
+                                user.getNomComplet(),
+                                user.getEmail(),
+                                user.getAdresse(),
+                                user.getVille(),
+                                user.getRole().name(),
+                                user.getStatut(),
+                                user.getCreatedAt());
+
+                return ResponseEntity.ok(dto);
+        }
 }

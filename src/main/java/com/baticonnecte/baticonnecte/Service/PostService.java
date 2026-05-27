@@ -31,7 +31,7 @@ public class PostService {
         PostEntity post = PostEntity.builder()
                 .titre(dto.titre())
                 .description(dto.description())
-                .image(dto.image())
+                // .imageUrl(dto.image())
                 .user(user)
                 .build();
 
@@ -60,7 +60,7 @@ public class PostService {
 
         post.setTitre(dto.titre());
         post.setDescription(dto.description());
-        post.setImage(dto.image());
+        // post.imageUrl(dto.imageUrl());
 
         return mapToDto(postRepository.save(post));
     }
@@ -76,7 +76,7 @@ public class PostService {
                 p.getId(),
                 p.getTitre(),
                 p.getDescription(),
-                p.getImage(),
+                p.getImageUrl(),
                 p.getUser() != null ? p.getUser().getId() : null
         );
     }

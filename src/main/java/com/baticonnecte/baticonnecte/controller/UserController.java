@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -22,7 +24,7 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService){
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
@@ -33,10 +35,10 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "Utilisateur introuvable !")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<getUserByIdResponseDto> getById(@PathVariable UUID id){
+    public ResponseEntity<getUserByIdResponseDto> getById(@PathVariable UUID id) {
         UserEntity user = userService.getById(id);
 
-        getUserByIdResponseDto userResponse =  getUserByIdResponseDto.builder()
+        getUserByIdResponseDto userResponse = getUserByIdResponseDto.builder()
                 .id(user.getId())
                 .nomComplet(user.getNomComplet())
                 .adresse(user.getAdresse())
@@ -51,14 +53,14 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-
     @Operation(summary = "Récupérer tous les utilisateurs par filtre et par pagination (ADMIN)")
     @ApiResponse(responseCode = "200", description = "Retourne les utilisateurs")
     @ApiResponse(responseCode = "401", description = "Accès non requise")
     @ApiResponse(responseCode = "403", description = "Authentification requise")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping()
-    public Page<getUserByIdResponseDto> getAll(@RequestParam(required = false) String filter, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int limit){
+    public Page<getUserByIdResponseDto> getAll(@RequestParam(required = false) String filter,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int limit) {
         Pageable pageable = PageRequest.of(page, limit);
 
         return userService.getAll(filter, pageable);
@@ -71,9 +73,23 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "Utilisateur introuvable !")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> delete(@PathVariable UUID id){
+    public ResponseEntity<String> delete(@PathVariable UUID id) {
         userService.delete(id);
         String message = "Utilisateur supprimé avec succès !";
         return ResponseEntity.ok(message);
+    }
+
+    @Operation(summary = "Uploader la photo de profil d'un utilisateur", description = "Permet d'uploader ou remplacer la photo de profil d'un utilisateur via Cloudinary.", responses = {
+            @ApiResponse(responseCode = "200", description = "Image uploadée avec succès"),
+            @ApiResponse(responseCode = "400", description = "Fichier invalide ou absent"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
+    })
+    @PatchMapping(value = "/{id}/upload-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserEntity> uploadProfile(
+            @PathVariable UUID id,
+            @RequestParam("file") MultipartFile file) {
+
+        return ResponseEntity.ok(
+                userService.updatePicture(id, file));
     }
 }

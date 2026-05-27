@@ -5,7 +5,7 @@ import java.util.UUID;
 public record CreatePostDto(
         String titre,
         String description,
-        String image,
+        String imageUrl,
         UUID userId
 )
 {

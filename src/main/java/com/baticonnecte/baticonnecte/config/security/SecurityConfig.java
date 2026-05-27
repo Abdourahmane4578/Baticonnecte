@@ -1,6 +1,5 @@
 package com.baticonnecte.baticonnecte.config.security;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,7 +16,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter){
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
@@ -29,7 +28,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
                     corsConfiguration.setAllowedOrigins(java.util.List.of("http://localhost:4200"));
-                    corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+                    corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS", "HEAD"));
                     corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
                     corsConfiguration.setAllowCredentials(true);
                     corsConfiguration.setMaxAge(3600L);
@@ -40,11 +39,25 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+                                "/swagger-ui.html")
+                        .permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json");
+                            response.getWriter().write("""
+                                        {"error":"Authentification requise"}
+                                    """);
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(403);
+                            response.setContentType("application/json");
+                            response.getWriter().write("""
+                                        {"error":"Accès refusé - permissions insuffisantes"}
+                                    """);
+                        }))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

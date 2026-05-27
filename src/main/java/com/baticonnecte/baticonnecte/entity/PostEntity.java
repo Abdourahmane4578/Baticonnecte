@@ -25,8 +25,8 @@ public class PostEntity {
     @Column(length = 1000)
     private String description;
 
-    private String image;
-
+    @Column(nullable = true)
+    private String imageUrl;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
