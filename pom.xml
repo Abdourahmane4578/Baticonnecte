@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.baticonnecte</groupId>
 	<artifactId>baticonnecte</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>3.3.5</version>
 	<name>baticonnecte</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
