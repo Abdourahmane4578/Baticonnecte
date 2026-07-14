@@ -10,9 +10,11 @@ import com.baticonnecte.baticonnecte.repository.UserRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -95,29 +97,38 @@ public class AuthController {
         }
 
         @Operation(summary = "Récupérer le profile utilisateur")
-        @ApiResponse(responseCode = "200", description = "Retourne les informations de l'utilisateur connecté")
-        @ApiResponse(responseCode = "401", description = "Authentification requise")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Retourne les informations de l'utilisateur connecté"),
+                @ApiResponse(responseCode = "401", description = "Authentification requise"),
+                @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+        })
         @GetMapping("/me")
-        public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        public ResponseEntity<UserResponseDto> getCurrentUser(Authentication authentication) {
 
+                // Vérification de l'authentification
                 if (authentication == null || !authentication.isAuthenticated()) {
-                        throw new ResponseStatusException(HttpStatusCode.valueOf(403), "Authentification requise");
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
                 }
 
                 String email = authentication.getName();
 
+                if (email == null || email.isEmpty()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalide");
+                }
+
                 UserEntity user = userRepository.findByEmail(email)
-                                .orElseThrow();
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé"));
 
                 UserResponseDto dto = new UserResponseDto(
-                                user.getId(),
-                                user.getNomComplet(),
-                                user.getEmail(),
-                                user.getAdresse(),
-                                user.getVille(),
-                                user.getRole().name(),
-                                user.getStatut(),
-                                user.getCreatedAt());
+                        user.getId(),
+                        user.getNomComplet(),
+                        user.getEmail(),
+                        user.getAdresse(),
+                        user.getVille(),
+                        user.getRole().name(),
+                        user.getStatut(),
+                        user.getCreatedAt()
+                );
 
                 return ResponseEntity.ok(dto);
         }
