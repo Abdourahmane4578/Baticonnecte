@@ -16,7 +16,8 @@ import org.springframework.context.annotation.Configuration;
                 version = "1.0",
                 description = "API pour gérer les utilisateurs, les métierss, messages et posts "
         ),
-        //servers = @Server(url = "http://localhost:8090", description = "Serveur local"),
+        // servers = @Server(url = "http://localhost:8090", description = "Serveur local"),
+        //servers = @Server(url = "http://localhost:8096", description = "Serveur local"),
         servers = @Server(url = "https://api-baticonnecte.onrender.com", description = "Serveur en ligne"),
         security = @SecurityRequirement(name = "bearerAuth") // active JWT pour les endpoints par défaut
 )

@@ -1,11 +1,11 @@
 package com.baticonnecte.baticonnecte.exception;
 
+import com.baticonnecte.baticonnecte.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,48 +15,129 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    // Gestion des erreurs de validation (@Valid)
+
+
+    // Erreurs de validation @Valid
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponseDto> handleValidationExceptions(
+            MethodArgumentNotValidException ex
+    ) {
+
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-        return ResponseEntity.badRequest().body(errors);
+
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
+
+        return ResponseEntity
+                .badRequest()
+                .body(
+                        ErrorResponseDto.builder()
+                                .message(errors.toString())
+                                .error("VALIDATION_ERROR")
+                                .statusCode(HttpStatus.BAD_REQUEST.value())
+                                .build()
+                );
     }
 
-    // Gestion des exceptions personnalisées (CustomException)
+
+
+    // Exceptions personnalisées
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<Map<String, String>> handleCustomException(CustomException ex) {
-        return ResponseEntity.status(ex.getStatus())
-                .body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ErrorResponseDto> handleCustomException(
+            CustomException ex
+    ) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(
+                        ErrorResponseDto.builder()
+                                .message(ex.getMessage())
+                                .error(ex.getStatus().name())
+                                .statusCode(ex.getStatus().value())
+                                .build()
+                );
     }
 
-    // Gestion des ResponseStatusException (ex: throw new
-    // ResponseStatusException(...))
+
+
+    // ResponseStatusException
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
-        return ResponseEntity.status(ex.getStatusCode())
-                .body(Map.of("error", ex.getReason()));
+    public ResponseEntity<ErrorResponseDto> handleResponseStatusException(
+            ResponseStatusException ex
+    ) {
+
+        return ResponseEntity
+                .status(ex.getStatusCode())
+                .body(
+                        ErrorResponseDto.builder()
+                                .message(ex.getReason())
+                                .error(ex.getStatusCode().toString())
+                                .statusCode(ex.getStatusCode().value())
+                                .build()
+                );
     }
 
-    // Gestion des erreurs d'authentification (401)
+
+
+    // Authentification
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentialsException(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "Email ou mot de passe incorrect"));
+    public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(
+            BadCredentialsException ex
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(
+                        ErrorResponseDto.builder()
+                                .message("Email ou mot de passe incorrect")
+                                .error("UNAUTHORIZED")
+                                .statusCode(HttpStatus.UNAUTHORIZED.value())
+                                .build()
+                );
     }
 
-    // Gestion des erreurs d'accès refusé (403)
+
+
+    // Autorisation
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", "Accès refusé : Vous n'avez pas les droits nécessaires"));
+    public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(
+            AccessDeniedException ex
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(
+                        ErrorResponseDto.builder()
+                                .message("Vous n'avez pas les permissions nécessaires")
+                                .error("FORBIDDEN")
+                                .statusCode(HttpStatus.FORBIDDEN.value())
+                                .build()
+                );
     }
 
-    // Gestion des erreurs générales (500)
+
+
+    // Erreurs générales
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGlobalException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Une erreur interne est survenue : " + ex.getMessage()));
+    public ResponseEntity<ErrorResponseDto> handleGlobalException(
+            Exception ex
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(
+                        ErrorResponseDto.builder()
+                                .message(ex.getMessage())
+                                .error("INTERNAL_SERVER_ERROR")
+                                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .build()
+                );
     }
 }

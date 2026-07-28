@@ -1,6 +1,7 @@
 package com.baticonnecte.baticonnecte.controller;
 
 import com.baticonnecte.baticonnecte.Service.UserService;
+import com.baticonnecte.baticonnecte.dto.PageResponseDto;
 import com.baticonnecte.baticonnecte.dto.getUserByIdResponseDto;
 import com.baticonnecte.baticonnecte.entity.UserEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,14 +59,19 @@ public class UserController {
     @ApiResponse(responseCode = "401", description = "Accès non requise")
     @ApiResponse(responseCode = "403", description = "Authentification requise")
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping()
-    public Page<getUserByIdResponseDto> getAll(@RequestParam(required = false) String filter,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int limit) {
+    @GetMapping
+    public ResponseEntity<PageResponseDto<getUserByIdResponseDto>> getAll(
+            @RequestParam(required = false) String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+
         Pageable pageable = PageRequest.of(page, limit);
 
-        return userService.getAll(filter, pageable);
+        return ResponseEntity.ok(
+                userService.getAll(filter, pageable)
+        );
     }
-
     @Operation(summary = "Supprimer un utilisateur par son id (ADMIN)")
     @ApiResponse(responseCode = "200", description = "Utilisateur supprimé avec succès")
     @ApiResponse(responseCode = "401", description = "Accès non requise")

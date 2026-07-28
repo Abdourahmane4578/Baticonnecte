@@ -2,6 +2,7 @@ package com.baticonnecte.baticonnecte.controller;
 
 import com.baticonnecte.baticonnecte.Service.MetierService;
 import com.baticonnecte.baticonnecte.dto.MetierDto;
+import com.baticonnecte.baticonnecte.dto.MetierDtoResponse;
 import com.baticonnecte.baticonnecte.entity.MetierEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,7 +24,7 @@ public class MetierController {
 
     private final MetierService metierService;
 
-    public MetierController(MetierService metierService){
+    public MetierController(MetierService metierService) {
         this.metierService = metierService;
     }
 
@@ -35,7 +36,7 @@ public class MetierController {
     @ApiResponse(responseCode = "409", description = "Ce métier existe !")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<MetierEntity> create(@Valid @RequestBody MetierDto body){
+    public ResponseEntity<MetierEntity> create(@Valid @RequestBody MetierDto body) {
         MetierEntity response = metierService.create(body.nom(), body.description());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -46,7 +47,7 @@ public class MetierController {
     @ApiResponse(responseCode = "403", description = "Authentification requise")
     @ApiResponse(responseCode = "404", description = "Ce métier est introuvable !")
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<MetierEntity>> getById(@PathVariable UUID id){
+    public ResponseEntity<Optional<MetierEntity>> getById(@PathVariable UUID id) {
         Optional<MetierEntity> metierEntity = metierService.getById(id);
 
         return ResponseEntity.ok(metierEntity);
@@ -55,11 +56,9 @@ public class MetierController {
     @Operation(summary = "Lister les métiers")
     @ApiResponse(responseCode = "200", description = "Retourne la liste des métiers")
     @ApiResponse(responseCode = "403", description = "Authentification requise")
-    @GetMapping()
-    public ResponseEntity<List<MetierEntity>> getAll(){
-        List<MetierEntity> metierEntities = metierService.getAll();
-
-        return ResponseEntity.ok(metierEntities);
+    @GetMapping
+    public ResponseEntity<List<MetierDtoResponse>> getAll() {
+        return ResponseEntity.ok(metierService.getAll());
     }
 
     @Operation(summary = "Modifier un métier par id (ADMIN)")
@@ -69,7 +68,7 @@ public class MetierController {
     @ApiResponse(responseCode = "404", description = "Ce métier est introuvable !")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<MetierEntity> update(@PathVariable UUID id, @RequestBody MetierDto body){
+    public ResponseEntity<MetierEntity> update(@PathVariable UUID id, @RequestBody MetierDto body) {
         MetierEntity metierEntity = metierService.update(id, body.nom(), body.description(), body.statut());
 
         return ResponseEntity.ok(metierEntity);
@@ -82,7 +81,7 @@ public class MetierController {
     @ApiResponse(responseCode = "404", description = "Ce métier est introuvable !")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID id){
+    public ResponseEntity<?> delete(@PathVariable UUID id) {
 
         return ResponseEntity.ok(metierService.delete(id));
     }

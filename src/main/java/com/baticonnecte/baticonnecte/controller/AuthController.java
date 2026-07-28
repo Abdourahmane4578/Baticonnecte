@@ -1,6 +1,7 @@
 package com.baticonnecte.baticonnecte.controller;
 
 import com.baticonnecte.baticonnecte.Service.AuthService;
+import com.baticonnecte.baticonnecte.config.security.CustomUserDetails;
 import com.baticonnecte.baticonnecte.config.security.JwtService;
 import com.baticonnecte.baticonnecte.dto.LoginUserDto;
 import com.baticonnecte.baticonnecte.dto.RegisterUserDto;
@@ -65,35 +66,39 @@ public class AuthController {
         public ResponseEntity<?> login(@Valid @RequestBody LoginUserDto loginUserDto) {
 
                 Authentication authentication = authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(
-                                                loginUserDto.email(),
-                                                loginUserDto.password()));
+                        new UsernamePasswordAuthenticationToken(
+                                loginUserDto.email(),
+                                loginUserDto.password()
+                        )
+                );
 
-                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-                var userEntity = authService.findByEmail(userDetails.getUsername())
-                                .orElseThrow(() -> new RuntimeException(
-                                                "Utilisateur non trouvé après authentification"));
+                CustomUserDetails userDetails =
+                        (CustomUserDetails) authentication.getPrincipal();
 
-                String role = userDetails.getAuthorities() == null
-                                ? "USER"
-                                : userDetails.getAuthorities().stream()
-                                                .findFirst()
-                                                .map(a -> a.getAuthority().replace("ROLE_", ""))
-                                                .orElse("USER");
+
+                String role = userDetails.getAuthorities()
+                        .stream()
+                        .findFirst()
+                        .map(a -> a.getAuthority().replace("ROLE_", ""))
+                        .orElse("USER");
+
 
                 String token = jwtService.generateToken(
-                                userEntity.getId(),
-                                userEntity.getNomComplet(),
-                                userDetails.getUsername(),
-                                role);
+                        userDetails.getId(),
+                        userDetails.getNomComplet(),
+                        userDetails.getEmail(),
+                        role
+                );
+
 
                 return ResponseEntity.ok(Map.of(
-                                "token", token,
-                                "id", userEntity.getId(),
-                                "username", userEntity.getNomComplet(),
-                                "email", userEntity.getEmail(),
-                                "role", role));
+                        "token", token,
+                        "id", userDetails.getId(),
+                        "username", userDetails.getNomComplet(),
+                        "email", userDetails.getEmail(),
+                        "role", role
+                ));
         }
 
         @Operation(summary = "Récupérer le profile utilisateur")

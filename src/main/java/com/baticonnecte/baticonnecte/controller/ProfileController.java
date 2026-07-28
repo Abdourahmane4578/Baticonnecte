@@ -59,6 +59,6 @@ public class ProfileController {
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable UUID id){
         String message = profileService.delete(id);
-        return ResponseEntity.ok(message); // HTTP 200 avec message
+        return ResponseEntity.ok(message);
     }
 }
