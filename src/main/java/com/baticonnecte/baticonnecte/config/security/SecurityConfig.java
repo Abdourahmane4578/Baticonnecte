@@ -29,7 +29,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
                     corsConfiguration.setAllowedOrigins(java.util.List.of(
-                            "https://front-baticonnect.onrender.com",
+                           // "https://front-baticonnect.onrender.com",
+                            "http://localhost:4200/",
+
                             "http://localhost:3000",
                             "http://localhost:3001"
                     ));
